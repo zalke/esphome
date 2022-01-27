@@ -43,7 +43,11 @@ void TuyaClimate::setup() {
   }
   if (this->target_temperature_id_.has_value()) {
     this->parent_->register_listener(*this->target_temperature_id_, [this](const TuyaDatapoint &datapoint) {
-      this->manual_temperature_ = datapoint.value_int * this->target_temperature_multiplier_;
+      if (this->fahrenheit_) {
+        this->manual_temperature_ = fahrenheit_to_celsius(datapoint.value_int * this->target_temperature_multiplier_);
+      } else {
+        this->manual_temperature_ = datapoint.value_int * this->target_temperature_multiplier_;
+      }      
       ESP_LOGV(TAG, "MCU reported manual target temperature is: %.1f", this->manual_temperature_);
       this->compute_target_temperature_();
       this->compute_state_();
@@ -52,7 +56,11 @@ void TuyaClimate::setup() {
   }
   if (this->current_temperature_id_.has_value()) {
     this->parent_->register_listener(*this->current_temperature_id_, [this](const TuyaDatapoint &datapoint) {
-      this->current_temperature = datapoint.value_int * this->current_temperature_multiplier_;
+      if (this->fahrenheit_) {        
+        this->current_temperature = fahrenheit_to_celsius(datapoint.value_int * this->current_temperature_multiplier_);
+      } else {
+        this->current_temperature = datapoint.value_int * this->current_temperature_multiplier_;
+      }             
       ESP_LOGV(TAG, "MCU reported current temperature is: %.1f", this->current_temperature);
       this->compute_state_();
       this->publish_state();
@@ -107,8 +115,13 @@ void TuyaClimate::control(const climate::ClimateCall &call) {
   if (call.get_target_temperature().has_value()) {
     const float target_temperature = *call.get_target_temperature();
     ESP_LOGV(TAG, "Setting target temperature: %.1f", target_temperature);
-    this->parent_->set_integer_datapoint_value(*this->target_temperature_id_,
-                                               (int) (target_temperature / this->target_temperature_multiplier_));
+    if (this->fahrenheit_) {
+      this->parent_->set_integer_datapoint_value(*this->target_temperature_id_,
+                                                 (int) celsius_to_fahrenheit(target_temperature / this->target_temperature_multiplier_));
+    } else {
+      this->parent_->set_integer_datapoint_value(*this->target_temperature_id_,
+                                                 (int) (target_temperature / this->target_temperature_multiplier_));
+    }
   }
 
   if (call.get_preset().has_value()) {

@@ -37,6 +37,11 @@ class TuyaClimate : public climate::Climate, public Component {
 
   void set_tuya_parent(Tuya *parent) { this->parent_ = parent; }
 
+  /// Set use of Fahrenheit units
+  void set_fahrenheit(bool value) {
+    this->fahrenheit_ = value;
+  }
+
  protected:
   /// Override control to change settings of the climate device.
   void control(const climate::ClimateCall &call) override;
@@ -77,6 +82,7 @@ class TuyaClimate : public climate::Climate, public Component {
   bool cooling_state_{false};
   float manual_temperature_;
   bool eco_;
+  bool fahrenheit_{false};
 };
 
 }  // namespace tuya
